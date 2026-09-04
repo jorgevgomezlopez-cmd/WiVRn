@@ -55,7 +55,7 @@
 class scene;
 
 #ifdef __ANDROID__
-extern "C" __attribute__((visibility("default"))) void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj);
+extern "C" void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj);
 #endif
 
 struct application_info
@@ -77,7 +77,7 @@ class application : public singleton<application>
 
 private:
 #ifdef __ANDROID__
-	friend __attribute__((visibility("default"))) void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj);
+	friend void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj);
 #endif
 
 	application_info app_info;
@@ -156,6 +156,7 @@ private:
 	std::chrono::nanoseconds last_scene_cpu_time;
 
 	std::optional<configuration> config;
+	std::optional<configuration> default_config;
 
 	boost::locale::generator gen;
 	boost::locale::gnu_gettext::messages_info messages_info;
@@ -205,6 +206,11 @@ public:
 	static android_app * native_app()
 	{
 		return instance().app_info.native_app;
+	}
+
+	static android_hid::input_handler & get_input_handler()
+	{
+		return instance().input_handler;
 	}
 #endif
 
@@ -305,6 +311,10 @@ public:
 	{
 		return *instance().wifi;
 	}
+
+#ifdef __ANDROID__
+	void set_usb_networking(bool enabled);
+#endif
 
 	static void ignore_debug_reports_for(void * object)
 	{
@@ -425,6 +435,12 @@ public:
 	{
 		assert(instance().config);
 		return *instance().config;
+	}
+
+	static configuration & get_default_config()
+	{
+		assert(instance().default_config);
+		return *instance().default_config;
 	}
 
 	static XrSessionState get_session_state()

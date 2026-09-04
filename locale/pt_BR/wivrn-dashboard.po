@@ -6,12 +6,13 @@
 #
 # SPDX-FileCopyrightText: 2025 myghi63 <myghi63@disroot.org>
 #
+# SPDX-FileCopyrightText: 2026 notblanky <me@notblanky.dev>
 msgid ""
 msgstr ""
 "Project-Id-Version: WiVRn-dashboard\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2026-05-31 21:58+0200\n"
-"PO-Revision-Date: 2026-06-01 01:35+0200\n"
+"POT-Creation-Date: 2026-08-29 22:24+0200\n"
+"PO-Revision-Date: 2026-08-30 01:41+0200\n"
 "Last-Translator: Claudio Sampaio (Patola) <patola@gmail.com>\n"
 "Language-Team: Portuguese <kde-i18n-doc@kde.org>\n"
 "Language: pt_BR\n"
@@ -19,54 +20,54 @@ msgstr ""
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=2; plural=(n != 1);\n"
-"X-Generator: Lokalize 26.04.1\n"
+"X-Generator: Lokalize 26.08.0\n"
 
-#: dashboard/apk_installer.cpp:137
+#: dashboard/apk_installer.cpp:133
 #, kde-format
 msgid "Cannot save APK file: %1"
 msgstr "Não foi possível salvar arquivo APK: %1"
 
-#: dashboard/apk_installer.cpp:171
+#: dashboard/apk_installer.cpp:167
 #, kde-format
 msgid "Downloading APK: %1 MB / %2 MB"
 msgstr "Baixando APK: %1 MB / %2 MB"
 
-#: dashboard/apk_installer.cpp:173
+#: dashboard/apk_installer.cpp:169
 #, kde-format
 msgid "Downloading APK: %1 MB"
 msgstr "Baixando APK: %1 MB"
 
-#: dashboard/apk_installer.cpp:182
+#: dashboard/apk_installer.cpp:178
 #, kde-format
 msgid "Download cancelled"
 msgstr "Download cancelado"
 
-#: dashboard/apk_installer.cpp:198
+#: dashboard/apk_installer.cpp:194
 #, kde-format
 msgid "Cannot download APK: %1"
 msgstr "Não é possível baixar o APK: %1"
 
-#: dashboard/apk_installer.cpp:221
+#: dashboard/apk_installer.cpp:217
 #, kde-format
 msgid "Installing APK"
 msgstr "Instalando APK"
 
-#: dashboard/apk_installer.cpp:225
+#: dashboard/apk_installer.cpp:221
 #, kde-format
 msgid "adb failed to start: %1"
 msgstr "O adb não conseguiu iniciar: %1"
 
-#: dashboard/apk_installer.cpp:235
+#: dashboard/apk_installer.cpp:231
 #, kde-format
 msgid "adb exited abnormally: %1"
 msgstr "adb saiu anormalmente: %1"
 
-#: dashboard/apk_installer.cpp:243
+#: dashboard/apk_installer.cpp:239
 #, kde-format
 msgid "The 'adb install' command failed: exit code %1"
 msgstr "O comando 'adb install' falhou: código de saída %1"
 
-#: dashboard/apk_installer.cpp:248
+#: dashboard/apk_installer.cpp:244
 #, kde-format
 msgid "Installation successful"
 msgstr "Instalação bem-sucedida"
@@ -336,7 +337,7 @@ msgid ""
 "No OpenVR compatibility detected, Steam games won't be able to load VR.\n"
 "Install xrizer or OpenComposite."
 msgstr ""
-"Nenhuma compatibilidade com OpenVR foi detectada. Os jogos do Steam não "
+"Nenhuma compatibilidade com OpenVR foi detectada. Os jogos da Steam não "
 "conseguirão carregar em VR.\n"
 "Instale o xrizer ou o OpenComposite."
 
@@ -534,7 +535,7 @@ msgstr "Autoiniciar aplicação:"
 #: dashboard/qml/SettingsPage.qml:94
 #, kde-format
 msgid "Auto connect from USB"
-msgstr "Autoconectar pela USB"
+msgstr "Autoconectar via USB"
 
 #: dashboard/qml/SettingsPage.qml:102
 #, kde-format
@@ -548,19 +549,25 @@ msgstr "Verificar configuração do sistema ao iniciar"
 
 #: dashboard/qml/SettingsPage.qml:114
 #, kde-format
-msgid "Forward keyboard & mouse from headset"
-msgstr "Repassar teclado & mouse do headset"
+msgid "Expose forwarded input devices via uinput"
+msgstr "Expor dispositivos de entrada repassados via uinput"
 
 #: dashboard/qml/SettingsPage.qml:117
 #, kde-format
 msgid ""
-"Keyboard and mouse connected to the client will act as if connected to the "
-"server. Client OS may reserve specific keys and combinations, which cannot "
-"be forwarded."
+"Replicate mouse, keyboard and gamepad connected to the headset as virtual "
+"devices on PC.\n"
+"Replicated devices will appear as if they were plugged to the PC, some keys "
+"may be reserved by the headset OS and not be available. Gamepad is also "
+"available without virtual devices for applications that access it through "
+"OpenXR."
 msgstr ""
-"Teclado e mouse conectados ao cliente agirão como se conectados ao servidor. "
-"O OS cliente pode reservar teclas e combinações específicas, as quais podem "
-"não ser repassadas."
+"Replicar mouse, teclado e gamepad conectados ao headset como dispositivos "
+"virtuais no PC.\n"
+"Dispositivos replicados aparecerão como se estivessem ligados ao PC, algumas "
+"teclas podem estar reservadas pelo SO do headset e não estar disponíveis. O "
+"Gamepad também fica disponível sem dispositivos virtuais para aplicações que "
+"o acessem pelo OpenXR."
 
 #: dashboard/qml/SettingsPage.qml:122
 #, kde-format
@@ -585,49 +592,96 @@ msgstr ""
 "Os dispositivos precisam estar ligados antes de se conectar ao WiVRn.\n"
 "Uma ferramenta externa como o motoc é necessária para calibração."
 
-#: dashboard/qml/SettingsPage.qml:140
+#: dashboard/qml/SettingsPage.qml:138
+#, kde-format
+msgid "Clamp extrapolation for SteamVR tracked devices"
+msgstr "Fixar extrapolação para dispositivos rastreados SteamVR"
+
+#: dashboard/qml/SettingsPage.qml:142
+#, kde-format
+msgid "SteamVR max pose extrapolation"
+msgstr "Máxima extrapolação de pose SteamVR"
+
+#: dashboard/qml/SettingsPage.qml:152
+#, kde-format
+msgctxt "value display for SteamVR max pose extrapolation"
+msgid "%1ms"
+msgid_plural "%1ms"
+msgstr[0] "%1ms"
+msgstr[1] "%1ms"
+
+#: dashboard/qml/SettingsPage.qml:157
+#, kde-format
+msgid ""
+"Maximum time in milliseconds that poses may be extrapolated ahead for "
+"SteamVR tracked devices. Tune this value if you experience jittery or wobbly "
+"tracking."
+msgstr ""
+"Tempo máximo em milissegundos em que as poses podem ser "
+"extrapoladas à frente para dispositivos rastreados SteamVR. Ajuste "
+"esse valor se você sentir rastreamento instável ou com tremidas."
+
+#: dashboard/qml/SettingsPage.qml:162
+#, kde-format
+msgid "SteamVR joystick deadzone"
+msgstr "Zona morta do joystick SteamVR"
+
+#: dashboard/qml/SettingsPage.qml:177
+#, kde-format
+msgid ""
+"Deadzone to apply to joysticks on lighthouse-tracked controllers, such as "
+"Index.\n"
+"For standalone controllers, deadzones may be adjusted via the headset's "
+"system settings."
+msgstr ""
+"Zona morta a se aplicar aos analógicos de controles rastreados por bases, "
+"tal como o Index.\n"
+"Para controles independentes, as zonas mortas podem ser ajustadas pelos "
+"ajustes de sistema do headset."
+
+#: dashboard/qml/SettingsPage.qml:185
 #, kde-format
 msgid "Custom adb location"
 msgstr "Caminho personalizado do adb"
 
-#: dashboard/qml/SettingsPage.qml:151
+#: dashboard/qml/SettingsPage.qml:196
 #, kde-format
 msgid "Adb location:"
 msgstr "Caminho do adb:"
 
-#: dashboard/qml/SettingsPage.qml:160
+#: dashboard/qml/SettingsPage.qml:205
 #, kde-format
 msgctxt "browse a file to choose the adb binary"
 msgid "Browse"
 msgstr "Navegar"
 
-#: dashboard/qml/SettingsPage.qml:170
+#: dashboard/qml/SettingsPage.qml:215
 #, kde-format
 msgid "Default"
 msgstr "Default"
 
-#: dashboard/qml/SettingsPage.qml:184
+#: dashboard/qml/SettingsPage.qml:229
 #, kde-format
 msgctxt "set a custom OpenVR compatibility library"
 msgid "Custom"
 msgstr "Personalizado"
 
-#: dashboard/qml/SettingsPage.qml:189
+#: dashboard/qml/SettingsPage.qml:234
 #, kde-format
 msgid "Disabled"
 msgstr "Desativado"
 
-#: dashboard/qml/SettingsPage.qml:205
+#: dashboard/qml/SettingsPage.qml:250
 #, kde-format
 msgid "OpenVR compatibility library:"
 msgstr "Biblioteca de compatibilidade OpenVR:"
 
-#: dashboard/qml/SettingsPage.qml:235
+#: dashboard/qml/SettingsPage.qml:280
 #, kde-format
 msgid "Library path, excluding bin/linux64/vrclient.so"
 msgstr "Caminho da biblioteca, excluindo bin/linux64/vrclient.so"
 
-#: dashboard/qml/SettingsPage.qml:240
+#: dashboard/qml/SettingsPage.qml:285
 #, kde-format
 msgctxt "browse to choose the OpenVR compatility to use"
 msgid "Browse"
@@ -671,7 +725,7 @@ msgid ""
 "If you installed WiVRn over USB on a Meta or Pico headset, the app is in the "
 "\"unknown sources\" section."
 msgstr ""
-"Se você instalou o WiVRN por USB em um headset Pico ou Meta, a aplicação "
+"Se você instalou o WiVRn via USB em um headset Pico ou Meta, a aplicação "
 "está na seção de \"fontes desconhecidas\"."
 
 #: dashboard/qml/TroubleshootPage.qml:24
@@ -731,7 +785,7 @@ msgid ""
 "another headset, you must enable pairing before connecting."
 msgstr ""
 "Se você reinstalou o servidor ou o cliente ou se você quer conectar outro "
-"headset, você deve atviar o pareamento antes de conectar."
+"headset, você deve ativar o pareamento antes de conectar."
 
 #: dashboard/qml/TroubleshootPage.qml:41
 #, kde-format
@@ -833,7 +887,7 @@ msgid ""
 msgstr ""
 "Para usar o WiVRn, você precisa instalar o aplicativo do cliente em seu "
 "headset.\n"
-"Você pode instalá-lo pela loja Meta ou diretamente pela USB."
+"Você pode instalá-lo pela loja Meta ou diretamente via USB."
 
 #: dashboard/qml/WizardPage.qml:148
 #, kde-format
@@ -876,7 +930,7 @@ msgstr "Ou"
 #: dashboard/qml/WizardPage.qml:187
 #, kde-format
 msgid "Install over USB"
-msgstr "Instalar pela USB"
+msgstr "Instalar via USB"
 
 #: dashboard/qml/WizardPage.qml:219
 #, kde-format
@@ -920,12 +974,12 @@ msgstr ""
 #: dashboard/qml/WizardPage.qml:326
 #, kde-format
 msgid "To connect over USB, click on \"Connect by USB\"."
-msgstr "Para conectar pela USB, clique em \"Conectar pela USB\"."
+msgstr "Para conectar via USB, clique em \"Conectar via USB\"."
 
 #: dashboard/qml/WizardPage.qml:329
 #, kde-format
 msgid "Connect by USB"
-msgstr "Conectar pela USB"
+msgstr "Conectar via USB"
 
 #: dashboard/qml/WizardPage.qml:349
 #, kde-format
@@ -984,6 +1038,20 @@ msgstr "xrizer"
 #, kde-format
 msgid "Open Composite"
 msgstr "Open Composite"
+
+#, kde-format
+#~ msgid "Forward keyboard & mouse from headset"
+#~ msgstr "Repassar teclado & mouse do headset"
+
+#, kde-format
+#~ msgid ""
+#~ "Keyboard and mouse connected to the client will act as if connected to "
+#~ "the server. Client OS may reserve specific keys and combinations, which "
+#~ "cannot be forwarded."
+#~ msgstr ""
+#~ "Teclado e mouse conectados ao cliente agirão como se conectados ao "
+#~ "servidor. O OS cliente pode reservar teclas e combinações específicas, as "
+#~ "quais podem não ser repassadas."
 
 #, kde-format
 #~ msgid ""

@@ -36,15 +36,9 @@ namespace
 {
 
 VkBool32 message_callback(
-#if VK_HEADER_VERSION >= 304
         vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
         vk::DebugUtilsMessageTypeFlagsEXT messageTypes,
         const vk::DebugUtilsMessengerCallbackDataEXT * pCallbackData,
-#else
-        VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
-        VkDebugUtilsMessageTypeFlagsEXT messageTypes,
-        const VkDebugUtilsMessengerCallbackDataEXT * pCallbackData,
-#endif
         void * pUserData)
 {
 	u_logging_level level = U_LOGGING_ERROR;
@@ -150,7 +144,7 @@ wivrn::vk_bundle::vk_bundle() :
 	vk::ApplicationInfo app_info{
 	        .pApplicationName = "WiVRn server",
 	        .pEngineName = "WiVRn",
-	        .apiVersion = VK_API_VERSION_1_3,
+	        .apiVersion = api_version,
 	};
 	{
 		// Required extensions
@@ -283,6 +277,10 @@ wivrn::vk_bundle::vk_bundle() :
 #endif
 #ifdef VK_KHR_unified_image_layouts
 		        VK_KHR_UNIFIED_IMAGE_LAYOUTS_EXTENSION_NAME,
+#endif
+// For perfetto GPU timestamp tracing
+#ifdef VK_EXT_calibrated_timestamps
+		        VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME,
 #endif
 		};
 		for (auto & ext: physical_device.enumerateDeviceExtensionProperties())

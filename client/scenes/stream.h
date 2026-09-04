@@ -32,6 +32,7 @@
 #include "wivrn_packets.h"
 #include "xr/space.h"
 #include <mutex>
+#include <optional>
 #include <queue>
 #include <shared_mutex>
 #include <thread>
@@ -76,7 +77,7 @@ private:
 	std::unique_ptr<wivrn_session> network_session;
 	std::thread network_thread;
 	thread_safe<to_headset::tracking_control> tracking_control{};
-	std::array<std::atomic<interaction_profile>, 2> interaction_profiles; // left and right hand
+	std::array<std::atomic<interaction_profile>, 3> interaction_profiles; // left hand, right hand, gamepad
 	std::atomic<bool> interaction_profile_changed = false;
 	std::atomic<XrTime> scheduled_derived_pose = 0; // Tracking thread will compute derived pose when time is reached
 	std::atomic<bool> recenter_requested = false;
@@ -131,6 +132,7 @@ private:
 	uint32_t height;
 
 	std::optional<imgui_context> imgui_ctx;
+	ImTextureID wivrn_logo = 0; // wordmark logo shown in the top bar, like the lobby
 	struct gui_toast
 	{
 		std::string content;
@@ -139,6 +141,20 @@ private:
 
 	static bool is_interactable(stream_tab);
 	bool is_gui_interactable() const;
+
+	// settings sub-page, client-only: the wire stream_tab stays settings
+	enum class settings_page
+	{
+		video,
+		audio,
+		streaming,
+		post_processing,
+		devices,
+		tracking,
+		theme,
+		system,
+	};
+	settings_page current_settings_page = settings_page::video;
 
 	// Tab currently being displayed
 	stream_tab gui_status = stream_tab::hidden;
@@ -188,7 +204,7 @@ private:
 
 	stream(std::string server_name, scene & parent_scene);
 
-	bool forward_hid_input(from_headset::hid::input_t);
+	bool forward_hid_input(from_headset::hid::input_t, bool device_enabled);
 
 public:
 	~stream();
@@ -237,6 +253,13 @@ public:
 	state current_state() const
 	{
 		return state_;
+	}
+
+	// Whether the server mirrors forwarded input devices to uinput. The gamepad is also exposed
+	// through OpenXR regardless, so this only affects forwarded keyboard and mouse.
+	bool hid_forwarding_enabled() const
+	{
+		return hid_forwarding;
 	}
 
 	void exit();

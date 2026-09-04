@@ -25,6 +25,7 @@
 #include <glm/gtc/quaternion.hpp>
 #include <magic_enum_containers.hpp>
 #include <string>
+#include <unordered_set>
 #include <utility>
 #include <openxr/openxr.h>
 
@@ -33,6 +34,15 @@ using hmd_permissions = magic_enum::containers::array<feature, const char *>;
 class hmd_traits
 {
 public:
+	// Properties have the defaults below
+	// The cpp file has per-headset values
+	// it is possible to override values:
+	// on Android:
+	//   adb setprop debug.wivrn.{property-name} {property-value}
+	//   i.e. adb setprop debug.wivrn.view_locate false
+	// on Linux:
+	//   export WIVRN_{PROPERTY-NAME}={property-value}
+	//   i.e. export WIVRN_VIEW_LOCATE=false
 	std::string controller_profile = "generic-trigger-squeeze";
 	std::string controller_ray_model = "assets://ray.glb";
 	hmd_permissions permissions{};
@@ -45,14 +55,14 @@ public:
 	bool hand_interaction_grip_surface = true;
 	bool pico_face_tracker = false;
 	bool discard_frame = true; // can do xrBeginFrame twice to discard the first one
+	bool usb_net = false;
+	std::unordered_map<std::string, std::string> override_shader;
+	std::unordered_set<std::string> blacklisted_extensions;
 #ifndef NDEBUG
-private:
 	bool initialized_ = false;
 #endif
 
 public:
-	hmd_traits();
-
 	void init();
 
 	const char * permission_name(feature f) const

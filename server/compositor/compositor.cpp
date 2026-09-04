@@ -35,6 +35,7 @@
 #include "encoder/video_encoder.h"
 #include "inplace_vector.hpp"
 #include "utils/method.h"
+#include "utils/wivrn_trace.h"
 
 #include "xrt/xrt_config_build.h" // IWYU pragma: keep
 #ifdef XRT_FEATURE_RENDERDOC
@@ -264,7 +265,7 @@ xrt_result_t compositor::mark_frame(int64_t frame_id,
 	switch (point)
 	{
 		case XRT_COMPOSITOR_FRAME_POINT_WOKE:
-			session.dump_time("wake_up", frame_id, when_ns);
+			trace::instant_feedback("wake_up", when_ns, frame_id);
 			return XRT_SUCCESS;
 		default:
 			assert(false);
@@ -307,7 +308,7 @@ xrt_result_t compositor::layer_commit(xrt_graphics_sync_handle_t sync_handle)
 	        .alpha = layer_accum.data.env_blend_mode == XRT_BLEND_MODE_ALPHA_BLEND,
 	};
 
-	session.dump_time("begin", frame.rendering.id, os_monotonic_get_ns());
+	trace::instant_feedback("begin", frame.rendering.id, os_monotonic_get_ns());
 
 	cmd_pool.reset();
 	cmd.begin({.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit});
@@ -595,6 +596,8 @@ xrt_result_t compositor::get_view_config(
 				};
 			}
 			return XRT_SUCCESS;
+		case XRT_VIEW_TYPE_QUAD:
+			return XRT_ERROR_UNSUPPORTED_VIEW_TYPE;
 	}
 	return XRT_ERROR_UNSUPPORTED_VIEW_TYPE;
 }
@@ -617,11 +620,14 @@ void compositor::encoder_work(std::stop_token tok)
 		if (req < 0)
 		{
 			encode_request.wait(req);
+			wivrn::trace::cpu_instant(wivrn::trace::cpu_track::compositor, "encoder_work wake", 0, 0);
 			continue;
 		}
 
 		assert(req < images.size());
 		auto & image = images[req];
+
+		wivrn::trace::scope trace_iter(wivrn::trace::cpu_track::compositor, 0, image.frame_index, "encoder_work iter");
 
 		try
 		{
@@ -708,6 +714,15 @@ compositor::compositor(wivrn_session & session) :
 	        vk.has_instance_ext(VK_EXT_DEBUG_UTILS_EXTENSION_NAME),
 	        log_level);
 	vk::detail::resultCheck(vk::Result(res), "vk_init_from_given");
+
+	c_base->vk.version = vk_bundle::api_version;
+	// vk_init_from_given can't enable calibrated timestamps; do it here.
+#ifdef VK_EXT_calibrated_timestamps
+	c_base->vk.has_EXT_calibrated_timestamps = vk.has_device_ext(VK_EXT_CALIBRATED_TIMESTAMPS_EXTENSION_NAME);
+#endif
+
+	// Share monado's vk_bundle so gpu_timestamp_pool reuses its calibration cache.
+	wivrn::trace::set_calibration_source(&c_base->vk);
 
 	// vk_init_from_given assumes a graphics queue was provided
 	c_base->vk.graphics_queue = nullptr;

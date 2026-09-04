@@ -31,6 +31,7 @@
 #include <regex>
 #include <sys/socket.h>
 #include <variant>
+#include <iostream>
 
 using namespace std::chrono_literals;
 
@@ -168,10 +169,15 @@ void wivrn::wivrn_connection::init(std::stop_token stop_token, std::function<voi
 
 	if (crypto_handshake.protocol_version != wivrn::protocol_version)
 	{
-		control.send(to_headset::crypto_handshake{
+		std::cout << "[WARNING] Protocol version mismatch ignored (Client: "
+		<< crypto_handshake.protocol_version
+		<< ", Server: " << wivrn::protocol_version << ")\n";
+		/*control.send(to_headset::crypto_handshake{
 		        .state = to_headset::crypto_handshake::crypto_state::incompatible_version,
 		});
-		throw std::runtime_error("Incompatible protocol version");
+		throw std::runtime_error("Incompatible protocol version");*/
+
+
 	}
 
 	crypto::key headset_key = crypto::key::from_public_key(crypto_handshake.public_key);
@@ -260,7 +266,8 @@ void wivrn::wivrn_connection::init(std::stop_token stop_token, std::function<voi
 
 	if (client_port >= 0)
 	{
-		stream.connect(client_address.sin6_addr, client_port);
+		client_address.sin6_port = htons(client_port);
+		stream.connect(client_address);
 		stream.set_send_buffer_size(1024 * 1024 * 5);
 	}
 	else

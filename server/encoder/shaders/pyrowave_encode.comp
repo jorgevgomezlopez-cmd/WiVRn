@@ -1,0 +1,110 @@
+#version 450
+
+// Grupo de trabajo 8x8 hilos
+layout(local_size_x = 8, local_size_y = 8, local_size_z = 1) in;
+
+// Binding 0: Imagen de Entrada (Lectura)
+layout(set = 0, binding = 0, rgba8) uniform readonly image2D inputImage;
+
+// Binding 1: SSBO de Salida mapeado en CPU
+layout(std430, set = 0, binding = 1) buffer OutputBuffer {
+    uint data[];
+} output_stream;
+
+// Push Constants
+layout(push_constant) uniform PushConstants {
+    float quantStep; // Paso de cuantificación de subbandas
+} params;
+
+// Memoria compartida en L1 del WorkGroup (8x8)
+shared vec3 blockRGB[8][8];
+shared vec3 blockWavelet[8][8];
+shared uint blockPacked[8][8]; // Para empaquetar en memoria rápida sin atómicas
+
+// Conversión estándar de RGB a YUV (BT.709)
+vec3 rgb2yuv(vec3 rgb) {
+    float y  =  0.2126 * rgb.r + 0.7152 * rgb.g + 0.0722 * rgb.b;
+    float cb = -0.1146 * rgb.r - 0.3854 * rgb.g + 0.5000 * rgb.b + 0.5;
+    float cr =  0.5000 * rgb.r - 0.4542 * rgb.g - 0.0458 * rgb.b + 0.5;
+    return vec3(y, cb, cr);
+}
+
+// Cuantificación con Dead-Zone
+vec3 quantize(vec3 val, float step) {
+    if (step <= 0.0) return val;
+    return sign(val) * floor(abs(val) / step + 0.5) * step;
+}
+
+void main()
+{
+    uvec2 localID = gl_LocalInvocationID.xy;
+    ivec2 globalPos = ivec2(gl_GlobalInvocationID.xy);
+    ivec2 imgSize = imageSize(inputImage);
+
+    // 1. Cargar píxel RGB -> YUV
+    if (globalPos.x < imgSize.x && globalPos.y < imgSize.y) {
+        vec4 color = imageLoad(inputImage, globalPos);
+        blockRGB[localID.y][localID.x] = rgb2yuv(color.rgb);
+    } else {
+        blockRGB[localID.y][localID.x] = vec3(0.0);
+    }
+
+    barrier();
+
+    // 2. Transformada DWT Horizontal (Haar)
+    if (localID.x < 4) {
+        uint x = localID.x * 2;
+        vec3 a = blockRGB[localID.y][x];
+        vec3 b = blockRGB[localID.y][x + 1];
+
+        blockWavelet[localID.y][localID.x]     = (a + b) * 0.5;
+        blockWavelet[localID.y][localID.x + 4] = (a - b) * 0.5;
+    }
+
+    barrier();
+
+    // 3. Transformada DWT Vertical (Haar)
+    if (localID.y < 4) {
+        uint y = localID.y * 2;
+        vec3 a = blockWavelet[y][localID.x];
+        vec3 b = blockWavelet[y + 1][localID.x];
+
+        blockRGB[localID.y][localID.x]     = (a + b) * 0.5; // Subbanda LL
+        blockRGB[localID.y + 4][localID.x] = (a - b) * 0.5; // Subbandas LH, HL, HH
+    }
+
+    barrier();
+
+    // 4. Cuantificación y Almacenamiento Local
+    if (globalPos.x < imgSize.x && globalPos.y < imgSize.y) {
+        vec3 coeff = blockRGB[localID.y][localID.x];
+
+        // Mantenemos la subbanda LL limpia, cuantificamos las subbandas de alta frecuencia
+        if (localID.x >= 4 || localID.y >= 4) {
+            coeff = quantize(coeff, params.quantStep);
+        }
+
+        uint y_val = uint(clamp(coeff.r * 255.0, 0.0, 255.0));
+        blockPacked[localID.y][localID.x] = y_val & 0xFFu;
+    } else {
+        blockPacked[localID.y][localID.x] = 0u;
+    }
+
+    barrier();
+
+    // 5. Escritura lineal rápida a VRAM (Sin usar operaciones atómicas)
+    // Procesamos 4 bytes por hilo ejecutante en la dimensión X
+    if (localID.x % 4 == 0 && globalPos.x < imgSize.x && globalPos.y < imgSize.y) {
+        uint p0 = blockPacked[localID.y][localID.x];
+        uint p1 = blockPacked[localID.y][localID.x + 1];
+        uint p2 = blockPacked[localID.y][localID.x + 2];
+        uint p3 = blockPacked[localID.y][localID.x + 3];
+
+        uint packed_word = p0 | (p1 << 8) | (p2 << 16) | (p3 << 24);
+
+        uint linear_idx = globalPos.y * imgSize.x + globalPos.x;
+        uint word_idx = linear_idx / 4;
+
+        output_stream.data[word_idx] = packed_word;
+    }
+}

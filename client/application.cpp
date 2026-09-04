@@ -39,6 +39,7 @@
 #include <boost/locale.hpp>
 #include <boost/url/parse.hpp>
 #include <chrono>
+#include <cstring>
 #include <ctype.h>
 #include <exception>
 #include <magic_enum.hpp>
@@ -602,6 +603,35 @@ static std::vector<interaction_profile> interaction_profiles{
                         "/user/eyes_ext/input/gaze_ext/pose",
                 },
         },
+        interaction_profile{
+                .profile_name = "/interaction_profiles/microsoft/xbox_controller",
+                .input_sources = {
+                        "/user/gamepad/input/menu/click",
+                        "/user/gamepad/input/view/click",
+                        "/user/gamepad/input/a/click",
+                        "/user/gamepad/input/b/click",
+                        "/user/gamepad/input/x/click",
+                        "/user/gamepad/input/y/click",
+                        "/user/gamepad/input/dpad_up/click",
+                        "/user/gamepad/input/dpad_down/click",
+                        "/user/gamepad/input/dpad_left/click",
+                        "/user/gamepad/input/dpad_right/click",
+                        "/user/gamepad/input/shoulder_left/click",
+                        "/user/gamepad/input/shoulder_right/click",
+                        "/user/gamepad/input/thumbstick_left/click",
+                        "/user/gamepad/input/thumbstick_right/click",
+                        "/user/gamepad/input/trigger_left/value",
+                        "/user/gamepad/input/trigger_right/value",
+                        "/user/gamepad/input/thumbstick_left/x",
+                        "/user/gamepad/input/thumbstick_left/y",
+                        "/user/gamepad/input/thumbstick_right/x",
+                        "/user/gamepad/input/thumbstick_right/y",
+                        "/user/gamepad/output/haptic_left",
+                        "/user/gamepad/output/haptic_right",
+                        "/user/gamepad/output/haptic_left_trigger",
+                        "/user/gamepad/output/haptic_right_trigger",
+                },
+        },
 };
 
 static const std::pair<std::string_view, XrActionType> action_suffixes[] =
@@ -634,11 +664,15 @@ static const std::pair<std::string_view, XrActionType> action_suffixes[] =
 		{"/ready_ext", XR_ACTION_TYPE_BOOLEAN_INPUT},
 
 		// Output paths
-		{"/haptic",           XR_ACTION_TYPE_VIBRATION_OUTPUT},
-		{"/haptic_trigger",   XR_ACTION_TYPE_VIBRATION_OUTPUT},
-		{"/haptic_trigger_fb",XR_ACTION_TYPE_VIBRATION_OUTPUT},
-		{"/haptic_thumb",     XR_ACTION_TYPE_VIBRATION_OUTPUT},
-		{"/haptic_thumb_fb",  XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic",              XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_trigger",      XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_trigger_fb",   XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_thumb",        XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_thumb_fb",     XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_left",         XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_right",        XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_left_trigger", XR_ACTION_TYPE_VIBRATION_OUTPUT},
+		{"/haptic_right_trigger",XR_ACTION_TYPE_VIBRATION_OUTPUT},
                 // clang-format on
 };
 
@@ -795,9 +829,6 @@ void application::initialize_vulkan()
 		}
 #endif
 	}
-	std::ranges::sort(extensions);
-	for (const auto & [extension_name, spec_version]: extensions)
-		spdlog::info("    {} (version {})", extension_name, spec_version);
 
 	vk_device_extensions.push_back(VK_KHR_PUSH_DESCRIPTOR_EXTENSION_NAME);
 	vk_device_extensions.push_back(VK_KHR_SAMPLER_YCBCR_CONVERSION_EXTENSION_NAME);
@@ -818,6 +849,19 @@ void application::initialize_vulkan()
 	instance_extensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 	instance_extensions.push_back(VK_KHR_EXTERNAL_MEMORY_CAPABILITIES_EXTENSION_NAME);
 #endif
+
+	std::ranges::sort(extensions);
+	for (const auto & [extension_name, spec_version]: extensions)
+	{
+		if (runtime_hmd_traits.blacklisted_extensions.contains(extension_name))
+		{
+			spdlog::info("    {} (version {}) (blacklisted)", extension_name, spec_version);
+			if (std::ranges::find(instance_extensions, extension_name) != instance_extensions.end())
+				throw std::runtime_error("Required Vulkan instance extension is blacklisted");
+		}
+		else
+			spdlog::info("    {} (version {})", extension_name, spec_version);
+	}
 
 	vk::ApplicationInfo application_info{
 	        .pApplicationName = app_info.name.c_str(),
@@ -878,9 +922,19 @@ void application::initialize_vulkan()
 	spdlog::info("Available Vulkan device extensions:");
 	for (const auto & [extension_name, spec_version]: extensions)
 	{
-		spdlog::info("    {} (version {})", extension_name, spec_version);
-		if (auto it = optional_device_extensions.find(extension_name); it != optional_device_extensions.end())
-			vk_device_extensions.push_back(it->data());
+		if (runtime_hmd_traits.blacklisted_extensions.contains(extension_name))
+		{
+			spdlog::info("    {} (version {}) (blacklisted)", extension_name, spec_version);
+
+			if (std::ranges::find(vk_device_extensions, extension_name) != instance_extensions.end())
+				throw std::runtime_error("Required Vulkan device extension is blacklisted");
+		}
+		else
+		{
+			spdlog::info("    {} (version {})", extension_name, spec_version);
+			if (auto it = optional_device_extensions.find(extension_name); it != optional_device_extensions.end())
+				vk_device_extensions.push_back(it->data());
+		}
 	}
 
 	spdlog::info("Initializing Vulkan with device {}", physical_device_properties.deviceName.data());
@@ -1278,7 +1332,7 @@ void application::initialize()
 		auto it = std::find_if(opt_extensions.begin(),
 		                       opt_extensions.end(),
 		                       [&ext](const char * i) { return strcmp(i, ext.extensionName) == 0; });
-		if (it != opt_extensions.end())
+		if (it != opt_extensions.end() and not runtime_hmd_traits.blacklisted_extensions.contains(ext.extensionName))
 			xr_extensions.push_back(*it);
 	}
 
@@ -1350,7 +1404,12 @@ void application::initialize()
 	spaces[size_t(xr::spaces::view)] = xr_session.create_reference_space(XR_REFERENCE_SPACE_TYPE_VIEW);
 	spaces[size_t(xr::spaces::world)] = xr_session.create_reference_space(XR_REFERENCE_SPACE_TYPE_STAGE);
 
-	config.emplace(xr_system_id, xr_session);
+	config.emplace(xr_system_id, xr_session, application::get_config_path() / "client.json");
+	default_config.emplace(xr_system_id, xr_session);
+
+#ifdef __ANDROID__
+	set_usb_networking(config->usb_network);
+#endif
 
 	// HTC face tracker fails if created later
 	// we can destroy it right away, it actually stores static handles
@@ -1432,7 +1491,7 @@ std::pair<XrAction, XrActionType> application::get_action(std::string_view reque
 }
 
 #ifdef __ANDROID__
-extern "C" __attribute__((visibility("default"))) void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj)
+extern "C" void Java_org_meumeu_wivrn_MainActivity_onNewIntent(JNIEnv * env, jobject instance, jobject intent_obj)
 {
 	jni::jni_thread::setup_thread(env);
 	jni::object<"android/content/Intent"> intent{intent_obj};
@@ -1622,6 +1681,9 @@ void application::cleanup()
 
 #ifdef __ANDROID__
 	jni::jni_thread::detach();
+	app_info.native_app->onAppCmd = nullptr;
+	app_info.native_app->onInputEvent = nullptr;
+	app_info.native_app->userData = nullptr;
 #endif
 }
 
@@ -1717,8 +1779,10 @@ void application::run()
 		while (ALooper_pollOnce(100, nullptr, &events, (void **)&source) >= 0)
 		{
 			// Process this event.
-			if (source != nullptr)
-				source->process(app_info.native_app, source);
+			if (source == nullptr)
+				continue;
+
+			source->process(app_info.native_app, source);
 		}
 
 		if (app_info.native_app->destroyRequested)
@@ -1769,6 +1833,38 @@ void application::push_scene(std::shared_ptr<scene> s)
 	std::unique_lock _{instance().scene_stack_lock};
 	instance().scene_stack.push_back(std::move(s));
 }
+
+#ifdef __ANDROID__
+void application::set_usb_networking(bool enabled)
+{
+	jni::object<""> act(app_info.native_app->activity->clazz);
+	auto app = act.call<jni::object<"android/app/Application">>("getApplication");
+	auto ctx = app.call<jni::object<"android/content/Context">>("getApplicationContext");
+	auto system_service = ctx.call<jni::object<"java/lang/Object">>("getSystemService", jni::string("connectivity"));
+
+	auto cb = act.field<jni::object<"android/net/ConnectivityManager$NetworkCallback">>("netcb");
+	try
+	{
+		if (enabled)
+		{
+			auto req = jni::new_object<"android/net/NetworkRequest$Builder">()
+			                   .call<jni::object<"android/net/NetworkRequest$Builder">>("removeCapability", jni::Int(12) /*NET_CAPABILITY_INTERNET*/)
+			                   .call<jni::object<"android/net/NetworkRequest$Builder">>("removeCapability", jni::Int(14) /*NET_CAPABILITY_TRUSTED*/)
+			                   .call<jni::object<"android/net/NetworkRequest$Builder">>("addTransportType", jni::Int(8) /*TRANSPORT_USB*/)
+			                   .call<jni::object<"android/net/NetworkRequest">>("build");
+
+			// system_service.call<void>("requestNetwork", req, jni::new_object<"org/meumeu/wivrn/NetworkInfoCallback">());
+			system_service.call<void>("requestNetwork", req, cb);
+		}
+		else
+		{
+			system_service.call<void>("unregisterNetworkCallback", cb);
+		}
+	}
+	catch (...)
+	{}
+}
+#endif
 
 void application::poll_actions()
 {

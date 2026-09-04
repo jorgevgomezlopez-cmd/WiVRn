@@ -26,10 +26,12 @@
 #include "tracking_control.h"
 #include "utils/thread_safe.h"
 #include "wivrn_android_face_tracker.h"
+#include "wivrn_body_tracker.h"
 #include "wivrn_connection.h"
 #include "wivrn_controller.h"
 #include "wivrn_eye_tracker.h"
 #include "wivrn_fb_face2_tracker.h"
+#include "wivrn_gamepad.h"
 #include "wivrn_generic_tracker.h"
 #include "wivrn_hmd.h"
 #include "wivrn_htc_face_tracker.h"
@@ -38,7 +40,6 @@
 #include "wivrn_uinput.h"
 #include "xrt/xrt_results.h"
 #include "xrt/xrt_system.h"
-#include <fstream>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -57,6 +58,7 @@ class wivrn_eye_tracker;
 class wivrn_android_face_tracker;
 class wivrn_fb_face2_tracker;
 class wivrn_htc_face_tracker;
+class wivrn_body_tracker;
 class wivrn_generic_tracker;
 struct audio_device;
 
@@ -95,17 +97,17 @@ class wivrn_session : public xrt_system_devices
 	wivrn_controller right_hand_interaction;
 	int32_t right_hand_interaction_index;
 	std::optional<wivrn_eye_tracker> eye_tracker;
+	std::optional<wivrn_gamepad> gamepad_device;
 	std::optional<wivrn_android_face_tracker> android_face_tracker;
 	std::optional<wivrn_fb_face2_tracker> fb_face2_tracker;
 	std::optional<wivrn_htc_face_tracker> htc_face_tracker;
-	beman::inplace_vector::inplace_vector<wivrn_generic_tracker, from_headset::body_tracking::max_tracked_poses> generic_trackers;
+	std::optional<wivrn_body_tracker> body_tracker;
+	beman::inplace_vector::inplace_vector<wivrn_generic_tracker, from_headset::htc_body::max_tracked_poses> generic_trackers;
 	std::optional<wivrn_uinput> uinput_handler;
+	bool gamepad_connected = false; // network thread only
 
 	clock_offset_estimator offset_est;
 	std::atomic<XrDuration> tracking_latency; // production to reception time
-
-	std::mutex csv_mutex;
-	std::ofstream feedback_csv;
 
 	std::unique_ptr<audio_device> audio_handle;
 
@@ -114,6 +116,8 @@ class wivrn_session : public xrt_system_devices
 
 	std::jthread net_thread;
 	std::jthread worker_thread;
+
+	thread_safe<std::exception_ptr> net_exception;
 
 	wivrn_session(std::unique_ptr<wivrn_connection> connection, b_system &);
 
@@ -130,7 +134,7 @@ public:
 	void start(ipc_server *);
 	void stop();
 
-	bool request_stop();
+	void request_stop();
 	void quit_if_no_client();
 
 	clock_offset get_offset();
@@ -164,7 +168,10 @@ public:
 	void operator()(const from_headset::tracking &);
 	void operator()(from_headset::derived_pose &&);
 	void operator()(from_headset::hand_tracking &&);
-	void operator()(from_headset::body_tracking &&);
+	void operator()(from_headset::meta_body &&);
+	void operator()(from_headset::meta_body_skeleton &&);
+	void operator()(from_headset::bd_body &&);
+	void operator()(from_headset::htc_body &&);
 	void operator()(from_headset::inputs &&);
 	void operator()(from_headset::hid::input && e);
 	void operator()(from_headset::timesync_response &&);
@@ -195,20 +202,34 @@ public:
 	template <typename T>
 	void send_stream(T && packet)
 	{
-		connection->send_stream(std::forward<T>(packet));
+		try
+		{
+			connection->send_stream(std::forward<T>(packet));
+		}
+		catch (std::exception & e)
+		{
+			*net_exception.lock() = std::current_exception();
+			throw;
+		}
 	}
 
 	template <typename T>
 	void send_control(T && packet)
 	{
-		connection->send_control(std::forward<T>(packet));
+		try
+		{
+			connection->send_control(std::forward<T>(packet));
+		}
+		catch (std::exception & e)
+		{
+			*net_exception.lock() = std::current_exception();
+			throw;
+		}
 	}
 
 	xrt_result_t push_event(const xrt_session_event &);
 
 	void set_foveated_size(uint32_t width, uint32_t height);
-
-	void dump_time(const std::string & event, uint64_t frame, int64_t time, uint8_t stream = -1, const char * extra = "");
 
 private:
 	void run_net(std::stop_token stop);
@@ -217,6 +238,9 @@ private:
 
 	void pause_session();
 	void resume_session();
+
+	// nullopt for id stops all apps
+	void stop_application(std::optional<uint32_t> id, int64_t timeout_ns);
 
 	void update_client_states(bool visible, bool focused);
 	void poll_session_loss();

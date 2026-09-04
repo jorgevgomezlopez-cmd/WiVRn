@@ -1,3 +1,4 @@
+set(LOCALEDIR "${CMAKE_BINARY_DIR}/locale")
 find_package(Gettext REQUIRED)
 
 function(CREATE_MO_FILES TARGET_NAME I18N_DOMAIN LOCALE_DIR)
