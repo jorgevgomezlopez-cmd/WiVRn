@@ -14,6 +14,24 @@ namespace wivrn {
         std::cout << "[Pyrowave Client] Instanciado decodificador Pyrowave exitosamente." << std::endl;
     }
 
+    void decoder_pyrowave::push_data(std::span<std::span<const uint8_t>> data, uint64_t frame_index, bool partial)
+    {
+        // Implementación requerida por la interfaz 'decoder'
+    }
+
+    void decoder_pyrowave::frame_completed(
+        const from_headset::feedback & feedback,
+        const to_headset::video_stream_data_shard::view_info_t & view_info)
+    {
+        // Implementación requerida por la interfaz 'decoder'
+    }
+
+    vk::Sampler decoder_pyrowave::sampler()
+    {
+        // Implementación requerida por la interfaz 'decoder'
+        return nullptr;
+    }
+
     void decoder_pyrowave::push_shard(uint64_t frame_index, std::span<const uint8_t> data) {
         if (data.empty()) return;
 
