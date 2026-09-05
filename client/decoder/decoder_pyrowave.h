@@ -1,7 +1,16 @@
 #pragma once
 
 #include "decoder.h"
+#include "wivrn_packets.h" // Para asegurarse de que reconoce desde/hacia headset
+
 #include <iostream>
+#include <span>
+#include <memory>
+#include <vulkan/vulkan_raii.hpp>
+
+namespace scenes {
+    class stream;
+}
 
 namespace wivrn {
 
@@ -18,14 +27,17 @@ namespace wivrn {
 
         ~decoder_pyrowave() override = default;
 
-        // Métodos virtuales obligatorios heredados de la clase base 'decoder'
+        // Métodos heredados de 'decoder'
         void push_data(std::span<std::span<const uint8_t>> data, uint64_t frame_index, bool partial) override;
-        void frame_completed(uint64_t frame_index, std::shared_ptr<video_frame> frame) override;
-        vk::Sampler sampler() override;
 
-        // Si push_shard es un método propio de pyrowave y no existe en la clase base 'decoder',
-        // quita el 'override':
-        void push_shard(uint64_t frame_index, std::span<const uint8_t> data);
+        void frame_completed(
+            const from_headset::feedback & feedback,
+            const to_headset::video_stream_data_shard::view_info_t & view_info) override;
+
+            vk::Sampler sampler() override;
+
+            // Método propio
+            void push_shard(uint64_t frame_index, std::span<const uint8_t> data);
     };
 
 } // namespace wivrn
