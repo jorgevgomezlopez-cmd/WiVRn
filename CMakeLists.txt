@@ -27,9 +27,9 @@ include(GNUInstallDirs)
 #set(GIT_DESC "" CACHE STRING "Version to show in UI (from git if empty, exclusive with GIT_TAG)")
 #set(GIT_COMMIT "" CACHE STRING "Git SHA used to fetch client APK (from git if empty, exclusive with GIT_TAG)")
 
-set(GIT_TAG "v0.1.0-pyrowave" CACHE STRING "Build for a tag (from git if empty)" FORCE)
+set(GIT_TAG "" CACHE STRING "Build for a tag" FORCE)
 set(GIT_DESC "v0.1.0-pyrowave" CACHE STRING "Version to show in UI" FORCE)
-set(GIT_COMMIT "pyrowave-build" CACHE STRING "Git SHA" FORCE)
+set(GIT_COMMIT "0318684e" CACHE STRING "Git SHA" FORCE)
 
 if (GIT_TAG AND (GIT_DESC OR GIT_COMMIT))
 	message(FATAL_ERROR "cannot use GIT_DESC or GIT_COMMIT when using GIT_TAG")
