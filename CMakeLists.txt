@@ -217,13 +217,21 @@ if(ANDROID)
         set(ANDROID_NDK $ENV{ANDROID_NDK_ROOT})
     endif()
 
+    # Determinar la ruta base del NDK
+    if(NOT ANDROID_NDK AND CMAKE_ANDROID_NDK)
+        set(ANDROID_NDK "${CMAKE_ANDROID_NDK}")
+    endif()
+
     if(ANDROID_NDK)
-        include_directories("${ANDROID_NDK}/sources/android/native_app_glue")
-    elseif(CMAKE_ANDROID_NDK)
-        include_directories("${CMAKE_ANDROID_NDK}/sources/android/native_app_glue")
+        # 1. Definir la ruta de native_app_glue
+        set(NATIVE_APP_GLUE_DIR "${ANDROID_NDK}/sources/android/native_app_glue")
+
+        # 2. Crear la librería estática a partir del código fuente
+        add_library(native_app_glue STATIC "${NATIVE_APP_GLUE_DIR}/android_native_app_glue.c")
+        target_include_directories(native_app_glue PUBLIC "${NATIVE_APP_GLUE_DIR}")
+        target_link_libraries(native_app_glue PRIVATE log)
     endif()
 endif()
-
 if (WIVRN_BUILD_DISSECTOR)
     if (WIVRN_USE_SYSTEM_OPENXR)
         find_package(OpenXR 1.1.53 REQUIRED)
