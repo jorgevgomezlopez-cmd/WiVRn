@@ -1,4 +1,9 @@
 #include "decoder_pyrowave.h"
+#include <android/log.h>
+
+#define LOG_TAG "WiVRn-Pyrowave"
+#define LOGI(...) __android_log_print(ANDROID_LOG_INFO, LOG_TAG, __VA_ARGS__)
+#define LOGE(...) __android_log_print(ANDROID_LOG_ERROR, LOG_TAG, __VA_ARGS__)
 
 namespace wivrn {
 
@@ -10,7 +15,7 @@ namespace wivrn {
         uint8_t stream_index,
         std::weak_ptr<scenes::stream> scene,
         shard_accumulator * acc)
-    : m_sampler(nullptr) // Corregido: usa m_sampler
+    : m_sampler(nullptr)
     {
         vk::SamplerCreateInfo sampler_info{};
         sampler_info.magFilter = vk::Filter::eLinear;
@@ -18,9 +23,9 @@ namespace wivrn {
         sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
         // Creación usando la interfaz RAII
-        m_sampler = device.createSampler(sampler_info); // Corregido: usa m_sampler
+        m_sampler = device.createSampler(sampler_info);
 
-        std::cout << "[Pyrowave Client] Instanciado decodificador Pyrowave exitosamente." << std::endl;
+        LOGI("Instanciado decodificador Pyrowave exitosamente.");
     }
 
     void decoder_pyrowave::push_data(std::span<std::span<const uint8_t>> data, uint64_t frame_index, bool partial)
@@ -41,7 +46,6 @@ namespace wivrn {
 
     vk::Sampler decoder_pyrowave::sampler()
     {
-        // Devuelve el handle nativo de Vulkan a partir del objeto RAII
         return *m_sampler;
     }
 
@@ -51,13 +55,16 @@ namespace wivrn {
 
         static uint64_t counter = 0;
         if (++counter % 90 == 0) {
-            std::cout << "[Pyrowave Client] Frame #" << frame_index
-            << " recibido en APK | Bytes: " << data.size()
-            << " | Muestra: " << static_cast<int>(data[0]) << " " << static_cast<int>(data[1])
-            << " " << static_cast<int>(data[2]) << " " << static_cast<int>(data[3]) << std::endl;
+            LOGI("Frame #%llu recibido en APK | Bytes: %zu | Muestra: %d %d %d %d",
+                 (unsigned long long)frame_index,
+                 data.size(),
+                 static_cast<int>(data[0]),
+                 static_cast<int>(data[1]),
+                 static_cast<int>(data[2]),
+                 static_cast<int>(data[3]));
         }
 
-        // TODO: Copiar 'data' al SSBO de Vulkan y ejecutar cmd.dispatch() del Compute Shader de decodificación
+        // TODO: Copiar 'data' al SSBO de Vulkan y ejecutar cmd.dispatch() del Compute Shader
     }
 
 } // namespace wivrn

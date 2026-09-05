@@ -25,7 +25,7 @@
 #endif
 #include "decoder/raw_decoder.h"
 
-// 1. Declaración de tu nuevo decodificador de Pyrowave
+// Declaración del decodificador Pyrowave
 #include "decoder_pyrowave.h"
 
 wivrn::decoder::~decoder() = default;
@@ -39,7 +39,7 @@ std::shared_ptr<wivrn::decoder> wivrn::decoder::make(
 	std::weak_ptr<scenes::stream> scene,
 	shard_accumulator * acc)
 {
-	// Forzamos el uso de Pyrowave directamente para omitir Android MediaCodec
+	// Instancia directa del decodificador Pyrowave
 	return std::make_shared<wivrn::decoder_pyrowave>(
 		device,
 		phys_dev,
@@ -59,6 +59,10 @@ static std::vector<wivrn::video_codec> supported_codecs_()
 	wivrn::ffmpeg::decoder::supported_codecs(res);
 	#endif
 	res.push_back(wivrn::video_codec::raw);
+
+	// Registra Pyrowave en la lista para que la app y el servidor sepan que está disponible
+	res.push_back(wivrn::video_codec::pyrowave);
+
 	return res;
 }
 
