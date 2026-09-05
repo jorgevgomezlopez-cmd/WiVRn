@@ -61,6 +61,7 @@ const char * mime(wivrn::video_codec codec)
 		case c::av1:
 			return "video/av01";
 		case c::raw:
+		case c::pyrowave:
 			break;
 	}
 	assert(false);
