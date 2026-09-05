@@ -17,7 +17,7 @@ namespace wivrn {
     class decoder_pyrowave : public decoder {
     private:
         // Handle RAII de Vulkan para mantener vivo el sampler mientras exista la clase
-        vk::raii::Sampler sampler{nullptr};
+        vk::raii::Sampler m_sampler{nullptr};
 
     public:
         decoder_pyrowave(

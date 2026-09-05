@@ -42,7 +42,7 @@ namespace wivrn {
     vk::Sampler decoder_pyrowave::sampler()
     {
         // Devuelve el handle nativo de Vulkan a partir del objeto RAII
-        return *sampler;
+        return *m_sampler;
     }
 
     void decoder_pyrowave::push_shard(uint64_t frame_index, std::span<const uint8_t> data)
