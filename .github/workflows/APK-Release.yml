@@ -1,8 +1,9 @@
 name: Release APK Only
 
 on:
+  workflow_dispatch:
   push:
-    branches: [ "master" ]
+    branches: [ "master", "main" ]
 
 env:
   BUILD_TYPE: RelWithDebInfo
@@ -11,22 +12,18 @@ jobs:
   build-android-only:
     name: Android
     runs-on: ubuntu-24.04
-    if: ${{ vars.APK_ONLY != '' }}
 
     strategy:
       matrix:
         buildtype: ['Release', 'Debug', 'DebugWithValidationLayer']
 
     steps:
-    - uses: actions/checkout@v6
+    - uses: actions/checkout@v4
       with:
-        # Checkout from upstream instead of WiVRn-APK to ensure the GIT_DESC variable is set correctly
-        repository: 'WiVRn/WiVRn'
-        ref: ${{ github.sha }}
         fetch-depth: 0
 
     # Gradle distribution and the Android plugin's dependencies.
-    - uses: actions/cache@v5
+    - uses: actions/cache@v4
       with:
         key: gradle-android-${{ hashFiles('gradle/wrapper/gradle-wrapper.properties', 'build.gradle') }}
         path: |
@@ -74,63 +71,16 @@ jobs:
         find debug -name libopenxr_loader.so -delete
 
     - name: Archive APK
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
-        name: apk-${{ (github.event_name == 'pull_request' && matrix.buildtype == 'Release') && 'Release-unsigned' || matrix.buildtype }}
+        name: apk-${{ matrix.buildtype }}
         path: apk/*.apk
         retention-days: 7
 
     - name: Archive debug symbols
       if: ${{ matrix.buildtype != 'Release' }}
-      uses: actions/upload-artifact@v7
+      uses: actions/upload-artifact@v4
       with:
         name: symbols-${{ matrix.buildtype }}
         path: debug/**/*.so
         retention-days: 7
-
-  release:
-    name: Create APK release
-    runs-on: ubuntu-24.04
-    needs: build-android-only
-    if: ${{ vars.APK_ONLY != '' }}
-
-    steps:
-    - name: Download APK artifacts
-      uses: actions/download-artifact@v8
-      with:
-        path: apk
-        pattern: 'apk-*'
-        merge-multiple: true
-
-    - name: Rename APK artifacts
-      run: |
-        cd apk
-        for f in *.apk; do
-          BASENAME=`echo ${f}|awk -F '-APK-' '{print $2}'`
-          mv "${f}" "org.meumeu.wivrn-${BASENAME}"
-        done
-
-    - name: Download APK debug artifacts
-      uses: actions/download-artifact@v8
-      with:
-        path: symbols
-        pattern: 'symbols-*'
-        merge-multiple: false
-
-    - name: Zip APK debug artifacts
-      run: |
-        cd symbols
-        zip -r ../debug-symbols.zip .
-
-    - name: APK Release
-      uses: softprops/action-gh-release@v3
-      with:
-        token: ${{ secrets.DOWNSTREAM_GITHUB_TOKEN }}
-        tag_name: "apk-${{ github.sha }}"
-        generate_release_notes: true
-        draft: false
-        prerelease: false
-        fail_on_unmatched_files: true
-        files: |
-          apk/*.apk
-          debug-symbols.zip
