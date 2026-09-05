@@ -18,7 +18,14 @@ namespace wivrn {
 
         ~decoder_pyrowave() override = default;
 
-        void push_shard(uint64_t frame_index, std::span<const uint8_t> data) override;
+        // Métodos virtuales obligatorios heredados de la clase base 'decoder'
+        void push_data(std::span<std::span<const uint8_t>> data, uint64_t frame_index, bool partial) override;
+        void frame_completed(uint64_t frame_index, std::shared_ptr<video_frame> frame) override;
+        vk::Sampler sampler() override;
+
+        // Si push_shard es un método propio de pyrowave y no existe en la clase base 'decoder',
+        // quita el 'override':
+        void push_shard(uint64_t frame_index, std::span<const uint8_t> data);
     };
 
 } // namespace wivrn
