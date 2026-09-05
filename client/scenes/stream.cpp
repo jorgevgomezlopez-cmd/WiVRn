@@ -336,6 +336,8 @@ std::shared_ptr<scenes::stream> scenes::stream::create(std::unique_ptr<wivrn_ses
 				case h264:
 				case raw:
 					break;
+				case pyrowave: // Añadido para gestionar la enumeración
+					break;
 				case h265:
 				case av1:
 					info.bit_depth = config.bit_depth;
@@ -343,7 +345,6 @@ std::shared_ptr<scenes::stream> scenes::stream::create(std::unique_ptr<wivrn_ses
 		}
 		else
 			info.supported_codecs = decoder::supported_codecs();
-
 		return info;
 	}());
 
