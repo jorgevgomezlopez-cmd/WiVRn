@@ -10,7 +10,7 @@ namespace wivrn {
         uint8_t stream_index,
         std::weak_ptr<scenes::stream> scene,
         shard_accumulator * acc)
-    : sampler(nullptr) // Inicialización explícita del miembro RAII
+    : m_sampler(nullptr) // Corregido: usa m_sampler
     {
         vk::SamplerCreateInfo sampler_info{};
         sampler_info.magFilter = vk::Filter::eLinear;
@@ -18,7 +18,7 @@ namespace wivrn {
         sampler_info.mipmapMode = vk::SamplerMipmapMode::eLinear;
 
         // Creación usando la interfaz RAII
-        sampler = device.createSampler(sampler_info);
+        m_sampler = device.createSampler(sampler_info); // Corregido: usa m_sampler
 
         std::cout << "[Pyrowave Client] Instanciado decodificador Pyrowave exitosamente." << std::endl;
     }
