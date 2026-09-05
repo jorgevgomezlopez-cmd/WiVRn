@@ -273,6 +273,7 @@ if (WIVRN_BUILD_SERVER)
 		SHADERS
 			"${_monado_src}/src/xrt/auxiliary/render/shaders/layer.comp"
 			"${CMAKE_CURRENT_SOURCE_DIR}/compositor/shaders/foveation.comp"
+			"${CMAKE_CURRENT_SOURCE_DIR}/encoder/shaders/pyrowave_encode.comp"
 		)
 
 	target_compile_definitions(wivrn-server PRIVATE JSON_DIAGNOSTICS=1)
@@ -329,20 +330,3 @@ if (WIVRN_BUILD_SERVER_LIBRARY)
 		COMPONENT Runtime)
 endif()
 
-# Compilación de Shaders de Vulkan (Pyrowave)
-find_program(GLSLANG_VALIDATOR glslangValidator REQUIRED)
-
-set(PYROWAVE_SHADER_SRC "${CMAKE_CURRENT_SOURCE_DIR}/encoder/shaders/pyrowave_encode.comp")
-set(PYROWAVE_SHADER_SPV "${CMAKE_CURRENT_BINARY_DIR}/shaders/pyrowave_encode.comp.spv")
-
-file(MAKE_DIRECTORY "${CMAKE_CURRENT_BINARY_DIR}/shaders")
-
-add_custom_command(
-    OUTPUT ${PYROWAVE_SHADER_SPV}
-    COMMAND ${GLSLANG_VALIDATOR} -V ${PYROWAVE_SHADER_SRC} -o ${PYROWAVE_SHADER_SPV}
-    DEPENDS ${PYROWAVE_SHADER_SRC}
-    COMMENT "Compilando Compute Shader Pyrowave a SPIR-V..."
-)
-
-add_custom_target(pyrowave_shaders DEPENDS ${PYROWAVE_SHADER_SPV})
-add_dependencies(wivrn-server pyrowave_shaders)

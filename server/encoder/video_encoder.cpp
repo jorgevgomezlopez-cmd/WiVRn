@@ -19,7 +19,8 @@
 
 // Include first because of incompatibility between Eigen and X includes
 #include "driver/wivrn_session.h"
-
+#include <iostream>
+#include "video_encoder_vulkan_pyrowave.h"
 #include "video_encoder.h"
 
 #include "encoder_settings.h"
@@ -108,6 +109,13 @@ namespace wivrn
 		uint8_t stream_idx)
 	{
 		using namespace std::string_literals;
+		//using namespace std::string_literals;
+
+		// FORZAR PYROWAVE: ignora las preferencias de la GUI/config por ahora
+		std::cout << "[Pyrowave] Forzando instanciacion de Pyrowave Encoder..." << std::endl;
+		return std::make_unique<video_encoder_vulkan_pyrowave>(wivrn_vk, settings, stream_idx);
+
+
 		std::unique_ptr<video_encoder> res;
 		if (settings.encoder_name == encoder_vulkan)
 		{
@@ -193,7 +201,7 @@ namespace wivrn
 			}
 			res->video_dump.open(file);
 		}
-		return res;
+		//return res;
 	}
 
 	video_encoder::video_encoder(vk_bundle & vk,

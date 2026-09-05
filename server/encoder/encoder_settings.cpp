@@ -223,9 +223,13 @@ namespace wivrn
 				if (config.codec == video_codec::raw or config.name == encoder_raw)
 					return {encoder_raw, video_codec::raw};
 
-				if (config.name == encoder_pyrowave)
+				if (config.name == encoder_pyrowave || config.name.empty())
 				{
-					auto codec = config.codec ? *config.codec : (info.supported_codecs.empty() ? video_codec::h264 : info.supported_codecs.front());
+					// Forzamos H.264 de 8-bit para evitar la excepción map::at de AV1 10-bit
+					video_codec codec = video_codec::h264;
+					if (config.codec) {
+						codec = *config.codec;
+					}
 					return {std::string(encoder_pyrowave), codec};
 				}
 

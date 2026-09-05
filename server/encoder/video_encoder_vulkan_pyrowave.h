@@ -33,16 +33,29 @@ namespace wivrn
         void create_output_buffer(size_t size);
 
     public:
+        // Traer sobrecargas de la clase base para evitar que C++ las oculte (-Woverloaded-virtual)
+        using video_encoder::present_image;
+
+        // Métodos de la clase base
+        void reset() override;
+
         video_encoder_vulkan_pyrowave(
             vk_bundle & vk,
             const encoder_settings & settings,
             uint8_t stream_idx);
 
+        // Firma de 3 parámetros (invocada directamente por layer_commit)
         void present_image(
             vk::Image y_cbcr,
             vk::SemaphoreSubmitInfo sem_info,
-            uint8_t slot,
-            uint64_t frame_index) override;
+            uint64_t frame_index) ;
+
+            // Sobrecarga de 4 parámetros (para compatibilidad de interfaz interna)
+            void present_image(
+                vk::Image y_cbcr,
+                vk::SemaphoreSubmitInfo sem_info,
+                uint8_t slot,
+                uint64_t frame_index) override;
 
             std::optional<data> encode(
                 uint8_t slot,
