@@ -1,7 +1,7 @@
 #pragma once
 
 #include "decoder.h"
-#include "wivrn_packets.h" // Para asegurarse de que reconoce desde/hacia headset
+#include "wivrn_packets.h"
 
 #include <iostream>
 #include <span>
@@ -15,6 +15,10 @@ namespace scenes {
 namespace wivrn {
 
     class decoder_pyrowave : public decoder {
+    private:
+        // Handle RAII de Vulkan para mantener vivo el sampler mientras exista la clase
+        vk::raii::Sampler sampler{nullptr};
+
     public:
         decoder_pyrowave(
             vk::raii::Device & device,
@@ -27,7 +31,7 @@ namespace wivrn {
 
         ~decoder_pyrowave() override = default;
 
-        // Métodos heredados de 'decoder'
+        // Métodos heredados de la interfaz 'decoder'
         void push_data(std::span<std::span<const uint8_t>> data, uint64_t frame_index, bool partial) override;
 
         void frame_completed(
@@ -36,7 +40,7 @@ namespace wivrn {
 
             vk::Sampler sampler() override;
 
-            // Método propio
+            // Método propio para procesar cada paquete de red
             void push_shard(uint64_t frame_index, std::span<const uint8_t> data);
     };
 
